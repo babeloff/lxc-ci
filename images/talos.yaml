@@ -1,0 +1,75 @@
+image:
+  distribution: talos
+
+source:
+  # Talos Linux images are downloaded from the official Image Factory
+  # The default schematic ID (376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba)
+  # provides a vanilla Talos installation without extensions
+  downloader: rootfs-http
+  url: https://factory.talos.dev/image/376567988ad370138ad8b2698212367b8edcb69b5fd68c80be1f2ec7d603b4ba/{{ image.release }}/nocloud-{{ image.architecture }}.raw.xz
+
+targets:
+  lxc:
+    create_message: |
+      You just created a {{ image.description }} container.
+
+      Talos Linux is a modern, immutable OS designed for Kubernetes.
+      It is managed entirely via API - there is no shell or SSH access.
+
+      To interact with Talos, use the talosctl command-line tool:
+        talosctl --nodes <container-ip> version
+
+      Documentation: https://www.talos.dev/docs/
+
+    config:
+    - type: all
+      before: 5
+      content: |-
+        lxc.include = LXC_TEMPLATE_CONFIG/common.conf
+
+    - type: user
+      before: 5
+      content: |-
+        lxc.include = LXC_TEMPLATE_CONFIG/userns.conf
+
+    - type: all
+      content: |-
+        lxc.arch = {{ image.architecture_kernel }}
+
+  incus:
+    vm:
+      filesystem: ext4
+      size: 6442450944
+
+files:
+- path: /etc/hostname
+  generator: hostname
+
+- path: /etc/hosts
+  generator: hosts
+
+- generator: fstab
+  types:
+  - vm
+
+- generator: incus-agent
+  types:
+  - vm
+
+packages:
+  # Talos is immutable and has no package manager
+  # All system configuration is done via the Talos API
+  custom_manager:
+    clean:
+      cmd: "true"
+    install:
+      cmd: "true"
+    remove:
+      cmd: "true"
+    refresh:
+      cmd: "true"
+    update:
+      cmd: "true"
+
+mappings:
+  architecture_map: debian
